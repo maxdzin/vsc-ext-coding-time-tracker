@@ -51,6 +51,29 @@ class Database {
             };
         });
     }
+    searchEntries(startDate, endDate, project) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const entries = this.getEntries();
+            return entries.filter(entry => {
+                const dateMatch = (!startDate || entry.date >= startDate) && (!endDate || entry.date <= endDate);
+                const projectMatch = !project || entry.project.toLowerCase().includes(project.toLowerCase());
+                return dateMatch && projectMatch;
+            });
+        });
+    }
+    resetTodayTime() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const today = new Date().toISOString().split('T')[0];
+            const entries = this.getEntries();
+            const updatedEntries = entries.filter(entry => entry.date !== today);
+            yield this.context.globalState.update('timeEntries', updatedEntries);
+        });
+    }
+    resetAllTime() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.context.globalState.update('timeEntries', []);
+        });
+    }
 }
 exports.Database = Database;
 //# sourceMappingURL=database.js.map

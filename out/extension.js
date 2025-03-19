@@ -10,11 +10,29 @@ function activate(context) {
     const database = new database_1.Database(context);
     const timeTracker = new timeTracker_1.TimeTracker(database);
     const statusBar = new statusBar_1.StatusBar(timeTracker);
-    const summaryView = new summaryView_1.SummaryView(context, database);
-    let disposable = vscode.commands.registerCommand('codingTimeTracker.showSummary', () => {
+    const summaryView = new summaryView_1.SummaryViewProvider(context, database, timeTracker);
+    // Register the existing command
+    let disposable = vscode.commands.registerCommand('simpleCodingTimeTracker.showSummary', () => {
         summaryView.show();
     });
+    // Register the new reset timer command
+    let resetTimerDisposable = vscode.commands.registerCommand('simpleCodingTimeTracker.resetTimer', () => {
+        timeTracker.resetTimer();
+        vscode.window.showInformationMessage('Coding time tracker has been reset for today.');
+    });
+    // Register the new reset all timers command
+    let resetAllTimersDisposable = vscode.commands.registerCommand('simpleCodingTimeTracker.resetAllTimers', () => {
+        vscode.window.showWarningMessage('Are you sure you want to reset all timers? This action cannot be undone.', 'Yes', 'No')
+            .then(selection => {
+            if (selection === 'Yes') {
+                timeTracker.resetAllTimers();
+                vscode.window.showInformationMessage('All coding time trackers have been reset.');
+            }
+        });
+    });
     context.subscriptions.push(disposable);
+    context.subscriptions.push(resetTimerDisposable);
+    context.subscriptions.push(resetAllTimersDisposable);
     context.subscriptions.push(timeTracker);
     context.subscriptions.push(statusBar);
     // Start tracking immediately if VS Code is already focused

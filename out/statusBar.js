@@ -2,20 +2,21 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StatusBar = void 0;
 const vscode = require("vscode");
+const utils_1 = require("./utils");
 class StatusBar {
     constructor(timeTracker) {
         this.onDidClickEmitter = new vscode.EventEmitter();
         this.timeTracker = timeTracker;
         this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-        this.statusBarItem.command = 'codingTimeTracker.showSummary';
+        this.statusBarItem.command = 'simpleCodingTimeTracker.showSummary';
+        this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
         this.statusBarItem.show();
         this.updateStatusBar();
         this.updateInterval = setInterval(() => this.updateStatusBar(), 1000); // Update every second
     }
     updateStatusBar() {
         const todayTotal = this.timeTracker.getTodayTotal();
-        const currentProjectTime = this.timeTracker.getCurrentProjectTime();
-        this.statusBarItem.text = `$(timer) Coding Time: ${this.formatTime(todayTotal)}`;
+        this.statusBarItem.text = `💻 ${this.formatTime(todayTotal)}`;
         this.statusBarItem.tooltip = this.getTooltipText();
     }
     formatTime(minutes) {
@@ -28,7 +29,11 @@ class StatusBar {
         const weeklyTotal = this.timeTracker.getWeeklyTotal();
         const monthlyTotal = this.timeTracker.getMonthlyTotal();
         const allTimeTotal = this.timeTracker.getAllTimeTotal();
-        return `Weekly: ${this.formatTime(weeklyTotal)}\nMonthly: ${this.formatTime(monthlyTotal)}\nAll Time: ${this.formatTime(allTimeTotal)}`;
+        return `Total Coding Time:
+This week: ${(0, utils_1.formatTime)(weeklyTotal)}
+This month: ${(0, utils_1.formatTime)(monthlyTotal)}
+All Time: ${(0, utils_1.formatTime)(allTimeTotal)}
+Click to show summary`;
     }
     onDidClick(listener) {
         return this.onDidClickEmitter.event(listener);

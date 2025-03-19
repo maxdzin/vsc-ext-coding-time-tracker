@@ -19,6 +19,9 @@ class TimeTracker {
         this.updateInterval = null;
         this.saveInterval = null;
         this.database = database;
+        this.saveIntervalSeconds = vscode.workspace
+            .getConfiguration('simpleCodingTimeTracker')
+            .get('saveInterval', 5);
     }
     startTracking() {
         if (!this.isTracking) {
@@ -26,7 +29,7 @@ class TimeTracker {
             this.startTime = Date.now();
             this.currentProject = this.getCurrentProject();
             this.updateInterval = setInterval(() => this.updateCurrentSession(), 1000);
-            this.saveInterval = setInterval(() => this.saveCurrentSession(), 60000); // Save every minute
+            this.saveInterval = setInterval(() => this.saveCurrentSession(), this.saveIntervalSeconds * 1000); // Convert seconds to milliseconds
         }
     }
     stopTracking() {
@@ -88,27 +91,55 @@ class TimeTracker {
         return currentProjectTime;
     }
     getWeeklyTotal() {
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        return this.getTotalSince(oneWeekAgo);
+        const now = new Date();
+        const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+        return this.getTotalSince(startOfWeek);
     }
     getMonthlyTotal() {
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-        return this.getTotalSince(oneMonthAgo);
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        return this.getTotalSince(startOfMonth);
     }
     getAllTimeTotal() {
-        return this.database.getEntries()
+        const total = this.database.getEntries()
             .reduce((sum, entry) => sum + entry.timeSpent, 0);
+        // Add current session if tracking is active
+        if (this.isTracking) {
+            const currentSessionTime = (Date.now() - this.startTime) / 60000;
+            return total + currentSessionTime;
+        }
+        return total;
     }
-    getTotalSince(date) {
-        const dateString = date.toISOString().split('T')[0];
-        return this.database.getEntries()
-            .filter(entry => entry.date >= dateString)
-            .reduce((sum, entry) => sum + entry.timeSpent, 0);
+    getTotalSince(startDate) {
+        const entries = this.database.getEntries();
+        const startDateString = startDate.toISOString().split('T')[0];
+        const now = new Date().toISOString().split('T')[0];
+        const filteredEntries = entries.filter(entry => entry.date >= startDateString && entry.date <= now);
+        const total = filteredEntries.reduce((sum, entry) => sum + entry.timeSpent, 0);
+        // Add current session if tracking is active
+        if (this.isTracking) {
+            const currentSessionTime = (Date.now() - this.startTime) / 60000;
+            return total + currentSessionTime;
+        }
+        return total;
+    }
+    getYearlyTotal() {
+        const now = new Date();
+        const startOfYear = new Date(now.getFullYear(), 0, 1); // January 1st of current year
+        return this.getTotalSince(startOfYear);
     }
     dispose() {
         this.stopTracking();
+    }
+    resetTimer() {
+        this.stopTracking();
+        this.startTime = 0;
+        this.database.resetTodayTime();
+    }
+    resetAllTimers() {
+        this.stopTracking();
+        this.startTime = 0;
+        this.database.resetAllTime();
     }
 }
 exports.TimeTracker = TimeTracker;

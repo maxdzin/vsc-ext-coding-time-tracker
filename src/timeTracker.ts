@@ -8,9 +8,13 @@ export class TimeTracker implements vscode.Disposable {
     private database: Database;
     private updateInterval: NodeJS.Timeout | null = null;
     private saveInterval: NodeJS.Timeout | null = null;
+    private saveIntervalSeconds: number;
 
     constructor(database: Database) {
         this.database = database;
+        this.saveIntervalSeconds = vscode.workspace
+            .getConfiguration('simpleCodingTimeTracker')
+            .get('saveInterval', 5);
     }
 
     startTracking() {
@@ -19,7 +23,7 @@ export class TimeTracker implements vscode.Disposable {
             this.startTime = Date.now();
             this.currentProject = this.getCurrentProject();
             this.updateInterval = setInterval(() => this.updateCurrentSession(), 1000);
-            this.saveInterval = setInterval(() => this.saveCurrentSession(), 60000); // Save every minute
+            this.saveInterval = setInterval(() => this.saveCurrentSession(), this.saveIntervalSeconds * 1000); // Convert seconds to milliseconds
         }
     }
 

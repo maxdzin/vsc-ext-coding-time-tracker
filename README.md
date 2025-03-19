@@ -13,7 +13,7 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
 - **Tooltip on Status Bar**: Shows the total coding time weekly, monthly, and all time basis.
 - **Detailed Summaries**: View comprehensive reports of your coding activity. You can search your total time on a particular day or project.
 - **Data Persistence**: Safely stores your time data for long-term analysis.
-- **Regular Data Saving**: Saves your coding time data to the background storage every 60 seconds (1 minute), ensuring your progress is regularly recorded while minimizing performance impact.
+- **Configurable Save Interval**: Customize how often your coding time data is saved (default: 5 seconds). Adjust this in VS Code settings to balance between data accuracy and system performance.
 
 
 ## Screenshots
@@ -53,6 +53,15 @@ Once installed, the extension will automatically start tracking your coding time
 
 To access detailed summaries and reports, use the command palette (Ctrl+Shift+P or Cmd+Shift+P on macOS) and search for "Time Tracker" to see available commands.
 
+### Configuring Save Interval
+You can customize how often the extension saves your coding time data:
+1. Open VS Code Settings (Ctrl+, or Cmd+, on macOS)
+2. Search for "Simple Coding Time Tracker"
+3. Find the "Save Interval" setting
+4. Enter your preferred interval in seconds (default is 5 seconds)
+   - Lower values (e.g., 5-10 seconds) provide more frequent updates but may impact performance
+   - Higher values (e.g., 30-60 seconds) are more efficient but update less frequently
+
 ## Control Panel Commands
 
 The Simple Coding Time Tracker extension offers a range of commands accessible through the Command Palette, designed to streamline your coding time tracking experience. Here are the primary commands available:
@@ -76,17 +85,19 @@ By using these commands, you can effectively manage your coding sessions and mai
 
 ## Changelog
 
+### [0.2.3] - 2025-03-19
+- Made the save interval configurable by the user, with a default of 5 seconds.
+- Updated the documentation to reflect the new configuration option.
+
 ### [0.2.2] - 2024-10-04
 - Added command to reset all timers
 - Added a command to reset daily timer
-
 
 ### [0.2.1] - 2024-10-02
 - Enhanced the UI of the summary view for a more professional look
 - Implemented date range search functionality
 - Added a reload button to reset search fields and refresh data
 - Improved the layout and styling of the Total Coding Time section
-
 
 ### [0.1.4] 
 - Initial release
