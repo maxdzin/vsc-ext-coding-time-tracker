@@ -1,0 +1,37 @@
+name: Publish Extension
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Compile
+        run: npm run compile
+        
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+        
+      - name: Package Extension
+        run: vsce package
+        
+      - name: Publish to Visual Studio Marketplace
+        run: vsce publish -p ${{ secrets.VSC_PAT }}
+        env:
+          VSCE_PAT: ${{ secrets.VSC_PAT }} 
