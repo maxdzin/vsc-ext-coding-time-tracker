@@ -48,7 +48,9 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "generate-test-data": "node scripts/generate-test-data.js",
+    "refresh-extension": "code --uninstall-extension noorashuvo.simple-coding-time-tracker && vsce package && code --install-extension $(npm pack --quiet)"
   },
   "devDependencies": {
     "@types/vscode": "^1.60.0",
