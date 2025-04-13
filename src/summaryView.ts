@@ -258,6 +258,80 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         margin: 10px 0 0;
                         color: var(--vscode-textLink-foreground);
                     }
+                    .heatmap-container {
+                        margin: 30px 0;
+                        overflow-x: auto;
+                        background: var(--vscode-editor-background);
+                        border: 1px solid var(--vscode-panel-border);
+                        border-radius: 6px;
+                        padding: 20px;
+                    }
+                    .heatmap-wrapper {
+                        display: flex;
+                        flex-direction: column;
+                        width: fit-content;
+                        margin: 0 auto;
+                    }
+                    .months-container {
+                        display: flex;
+                        gap: 30px;
+                    }
+                    .month-grid {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 15px;
+                    }
+                    .month-header {
+                        text-align: center;
+                        font-size: 14px;
+                        color: var(--vscode-foreground);
+                        font-weight: 500;
+                    }
+                    .heatmap-grid {
+                        display: grid;
+                        grid-template-columns: repeat(7, 15px);
+                        grid-auto-rows: 15px;
+                        gap: 4px;
+                    }
+                    .day-labels {
+                        display: grid;
+                        grid-template-columns: repeat(7, 15px);
+                        gap: 4px;
+                        margin-top: 4px;
+                        font-size: 10px;
+                        color: var(--vscode-foreground);
+                        opacity: 0.8;
+                    }
+                    .day-label {
+                        text-align: center;
+                    }
+                    .heatmap-cell {
+                        width: 15px;
+                        height: 15px;
+                        border-radius: 3px;
+                        background-color: var(--vscode-editor-background);
+                        border: 1px solid var(--vscode-panel-border);
+                        transition: all 0.2s ease;
+                    }
+                    .heatmap-cell:hover {
+                        transform: scale(1.1);
+                    }
+                    .heatmap-cell[data-level="0"] { background-color: var(--vscode-editor-background); }
+                    .heatmap-cell[data-level="1"] { background-color: #4a72b0; }
+                    .heatmap-cell[data-level="2"] { background-color: #3861a5; }
+                    .heatmap-cell[data-level="3"] { background-color: #254b91; }
+                    .heatmap-cell[data-level="4"] { background-color: #1a3b7c; }
+                    .heatmap-legend {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 5px;
+                        margin-top: 15px;
+                        padding-top: 15px;
+                        border-top: 1px solid var(--vscode-panel-border);
+                        font-size: 11px;
+                        color: var(--vscode-foreground);
+                    }
                 </style>
             </head>
             <body>
@@ -290,6 +364,12 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         <div class="total-time-item">
                             <h3>All Time</h3>
                             <p id="all-time-total">Loading...</p>
+                        </div>
+                    </div>
+                    <h2>Coding Activity</h2>
+                    <div class="heatmap-container">
+                        <div class="heatmap-wrapper">
+                            <div class="months-container"></div>
                         </div>
                     </div>
                     <div class="search-form">
@@ -376,6 +456,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                     .join('')}
                             </table>
                         \`;
+                        
+                        // Add heatmap creation
+                        createHeatmap(data);
                     }
 
                     function displaySearchResult(entries) {
@@ -404,6 +487,126 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         const hours = Math.floor(minutes / 60);
                         const mins = Math.round(minutes % 60);
                         return \`\${hours}h \${mins}m\`;
+                    }
+
+                    function createMonthGrid(data, date) {
+                        const monthName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(date);
+                        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+                        const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+                        
+                        const monthGrid = document.createElement('div');
+                        monthGrid.className = 'month-grid';
+                        
+                        // Add month header
+                        const header = document.createElement('div');
+                        header.className = 'month-header';
+                        header.textContent = \`\${monthName} \${date.getFullYear()}\`;
+                        monthGrid.appendChild(header);
+                        
+                        // Create the grid
+                        const grid = document.createElement('div');
+                        grid.className = 'heatmap-grid';
+                        
+                        // Get the day of week (0 = Sunday, ..., 6 = Saturday)
+                        const firstDayOfWeek = firstDay.getDay();
+                        
+                        // Create empty cells for padding before the first day
+                        for (let i = 0; i < firstDayOfWeek; i++) {
+                            const cell = document.createElement('div');
+                            cell.className = 'heatmap-cell empty-cell';
+                            cell.style.opacity = '0';
+                            grid.appendChild(cell);
+                        }
+                        
+                        // Create cells for each day of the month
+                        let previousCell = null; // Add this line to store previous cell reference
+                        for (let day = 1; day <= lastDay.getDate(); day++) {
+                            const currentDate = new Date(date.getFullYear(), date.getMonth(), day);
+                            const cell = document.createElement('div');
+                            cell.className = 'heatmap-cell';
+                            
+                            const dateStr = currentDate.toISOString().split('T')[0];
+                            const minutes = data.dailySummary[dateStr] || 0;
+                            const level = getIntensityLevel(minutes);
+                            
+                            // Get the day name (Sunday first)
+                            const dayOfWeek = currentDate.getDay();
+                            const dayNames = [ 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                            
+                            // Set the data-level on the previous cell if it exists
+                            if (previousCell) {
+                                previousCell.setAttribute('data-level', level.toString());
+                                previousCell.title = \`\${dateStr} (\${dayNames[dayOfWeek]}): \${formatTime(minutes)}\`;
+                            }
+                            
+                            grid.appendChild(cell);
+                            previousCell = cell; // Store current cell as previous for next iteration
+                        }
+                        
+                        // Don't forget to set the attribute for the last cell
+                        if (previousCell) {
+                            const lastDate = new Date(date.getFullYear(), date.getMonth(), lastDay.getDate());
+                            const lastDateStr = lastDate.toISOString().split('T')[0];
+                            const lastMinutes = data.dailySummary[lastDateStr] || 0;
+                            const lastLevel = getIntensityLevel(lastMinutes);
+                            const lastDayName = ['Saturday','Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][lastDate.getDay()];
+                            
+                            previousCell.setAttribute('data-level', lastLevel.toString());
+                            previousCell.title = \`\${lastDateStr} (\${lastDayName}): \${formatTime(lastMinutes)}\`;
+                        }
+                        
+                        monthGrid.appendChild(grid);
+
+                        // Add day labels below the grid with Sunday first
+                        const dayLabels = document.createElement('div');
+                        dayLabels.className = 'day-labels';
+                        const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+                        days.forEach(day => {
+                            const label = document.createElement('div');
+                            label.className = 'day-label';
+                            label.textContent = day;
+                            dayLabels.appendChild(label);
+                        });
+                        monthGrid.appendChild(dayLabels);
+                        
+                        return monthGrid;
+                    }
+
+                    function createHeatmap(data) {
+                        const container = document.querySelector('.heatmap-container');
+                        container.innerHTML = '<div class="heatmap-wrapper"><div class="months-container"></div></div>';
+                        
+                        const monthsContainer = container.querySelector('.months-container');
+                        const now = new Date();
+                        
+                        // Create grids for the last 3 months in reverse order (most recent first)
+                        for (let i = 2; i >= 0; i--) {
+                            const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                            const monthGrid = createMonthGrid(data, monthDate);
+                            monthsContainer.appendChild(monthGrid);
+                        }
+                        
+                        // Add legend
+                        const legend = document.createElement('div');
+                        legend.className = 'heatmap-legend';
+                        legend.innerHTML = \`
+                            <span>Less</span>
+                            <div class="heatmap-cell" data-level="0"></div>
+                            <div class="heatmap-cell" data-level="1"></div>
+                            <div class="heatmap-cell" data-level="2"></div>
+                            <div class="heatmap-cell" data-level="3"></div>
+                            <div class="heatmap-cell" data-level="4"></div>
+                            <span>More</span>
+                        \`;
+                        container.querySelector('.heatmap-wrapper').appendChild(legend);
+                    }
+
+                    function getIntensityLevel(minutes) {
+                        if (minutes === 0) return 0;
+                        if (minutes < 60) return 1;  // Less than 1 hour
+                        if (minutes < 180) return 2; // 1-3 hours
+                        if (minutes < 360) return 3; // 3-6 hours
+                        return 4; // More than 6 hours
                     }
 
                     // Request a refresh when the webview becomes visible
