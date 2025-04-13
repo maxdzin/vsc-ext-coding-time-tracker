@@ -221,6 +221,13 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     .search-form button:hover {
                         background-color: var(--vscode-button-hoverBackground);
                     }
+                    .reset-button {
+                        background-color: var(--vscode-button-secondaryBackground) !important;
+                        color: var(--vscode-button-secondaryForeground) !important;
+                    }
+                    .reset-button:hover {
+                        background-color: var(--vscode-button-secondaryHoverBackground) !important;
+                    }
                     .header {
                         display: flex;
                         justify-content: space-between;
@@ -372,7 +379,6 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
             <body>
                 <div class="header">
                     <h1>Coding Time Summary</h1>
-                    <button class="reload-button" id="reload-button">Reload</button>
                 </div>
                 <div class="container">
                     <h2>Total Coding Time</h2>
@@ -415,6 +421,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             ${projectOptions}
                         </select>
                         <button id="search-button">Search</button>
+                        <button id="reload-button" class="reset-button">Reset</button>
                     </div>
                     <div id="content">
                         <div class="chart-container">
@@ -583,7 +590,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         const content = document.getElementById('content');
                         content.innerHTML = \`
                             <div class="chart-container">
-                                <div class="chart-title">Project Summary 1</div>
+                                <div class="chart-title">Project Summary (Top 5)</div>
                                 <div class="chart-wrapper">
                                     <canvas id="projectChart"></canvas>
                                 </div>
@@ -595,6 +602,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 </div>
                             </div>
                         \`;
+                        
+                        // Create heatmap
+                        createHeatmap(data);
                         
                         // Project summary chart
                         const projectCtx = document.getElementById('projectChart').getContext('2d');
