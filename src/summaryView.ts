@@ -124,6 +124,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Coding Time Summary</title>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                 <style>
                     :root {
                         --background-color: var(--vscode-editor-background);
@@ -131,6 +132,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         --border-color: var(--vscode-panel-border);
                         --header-background: var(--vscode-titleBar-activeBackground);
                         --header-foreground: var(--vscode-titleBar-activeForeground);
+                        --chart-grid-color: var(--vscode-panel-border);
+                        --chart-text-color: var(--vscode-editor-foreground);
                     }
                     body {
                         font-family: var(--vscode-font-family);
@@ -332,6 +335,27 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         font-size: 11px;
                         color: var(--vscode-foreground);
                     }
+                    .chart-container {
+                        background: var(--vscode-editor-background);
+                        border: 1px solid var(--vscode-panel-border);
+                        border-radius: 6px;
+                        padding: 20px;
+                        margin-bottom: 30px;
+                    }
+                    .chart-title {
+                        font-size: 16px;
+                        font-weight: 500;
+                        color: var(--vscode-foreground);
+                        margin-bottom: 15px;
+                    }
+                    .chart-wrapper {
+                        position: relative;
+                        height: 300px;
+                        width: 100%;
+                    }
+                    .search-results-chart {
+                        height: 400px;
+                    }
                 </style>
             </head>
             <body>
@@ -381,7 +405,26 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         </select>
                         <button id="search-button">Search</button>
                     </div>
-                    <div id="content">Loading...</div>
+                    <div id="content">
+                        <div class="chart-container">
+                            <div class="chart-title">Project Summary</div>
+                            <div class="chart-wrapper">
+                                <canvas id="projectChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart-title">Daily Summary (Last 7 Days)</div>
+                            <div class="chart-wrapper">
+                                <canvas id="dailyChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-container search-results-chart" style="display: none;">
+                            <div class="chart-title">Search Results</div>
+                            <div class="chart-wrapper">
+                                <canvas id="searchChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <script>
                     const vscode = acquireVsCodeApi();
@@ -438,24 +481,120 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     function updateContent(data) {
                         const content = document.getElementById('content');
                         content.innerHTML = \`
-                            <h2>Project Summary</h2>
-                            <table>
-                                <tr><th>Project</th><th>Coding Time</th></tr>
-                                \${Object.entries(data.projectSummary)
-                                    .map(([project, time]) => \`<tr><td>\${project}</td><td>\${formatTime(time)}</td></tr>\`)
-                                    .join('')}
-                            </table>
-
-                            <h2>Daily Summary (Last 7 Days)</h2>
-                            <table>
-                                <tr><th>Date</th><th>Coding Time</th></tr>
-                                \${Object.entries(data.dailySummary)
-                                    .sort((a, b) => b[0].localeCompare(a[0]))
-                                    .slice(0, 7)
-                                    .map(([date, time]) => \`<tr><td>\${date}</td><td>\${formatTime(time)}</td></tr>\`)
-                                    .join('')}
-                            </table>
+                            <div class="chart-container">
+                                <div class="chart-title">Project Summary</div>
+                                <div class="chart-wrapper">
+                                    <canvas id="projectChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <div class="chart-title">Daily Summary (Last 7 Days)</div>
+                                <div class="chart-wrapper">
+                                    <canvas id="dailyChart"></canvas>
+                                </div>
+                            </div>
                         \`;
+                        
+                        // Create project summary chart
+                        const projectCtx = document.getElementById('projectChart').getContext('2d');
+                        const projectData = Object.entries(data.projectSummary)
+                            .sort((a, b) => b[1] - a[1])
+                            .slice(0, 5); // Show top 5 projects
+                        
+                        new Chart(projectCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: projectData.map(([project]) => project),
+                                datasets: [{
+                                    label: 'Coding Time (hours)',
+                                    data: projectData.map(([_, time]) => time / 60),
+                                    backgroundColor: 'rgba(74, 114, 176, 0.7)',
+                                    borderColor: 'rgba(74, 114, 176, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        grid: {
+                                            color: 'var(--chart-grid-color)'
+                                        },
+                                        ticks: {
+                                            color: 'var(--chart-text-color)'
+                                        }
+                                    },
+                                    x: {
+                                        grid: {
+                                            color: 'var(--chart-grid-color)'
+                                        },
+                                        ticks: {
+                                            color: 'var(--chart-text-color)'
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        labels: {
+                                            color: 'var(--chart-text-color)'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        // Create daily summary chart
+                        const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+                        const dailyData = Object.entries(data.dailySummary)
+                            .sort((a, b) => b[0].localeCompare(a[0]))
+                            .slice(0, 7);
+                        
+                        new Chart(dailyCtx, {
+                            type: 'line',
+                            data: {
+                                labels: dailyData.map(([date]) => date),
+                                datasets: [{
+                                    label: 'Coding Time (hours)',
+                                    data: dailyData.map(([_, time]) => time / 60),
+                                    fill: true,
+                                    backgroundColor: 'rgba(74, 114, 176, 0.2)',
+                                    borderColor: 'rgba(74, 114, 176, 1)',
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        grid: {
+                                            color: 'var(--chart-grid-color)'
+                                        },
+                                        ticks: {
+                                            color: 'var(--chart-text-color)'
+                                        }
+                                    },
+                                    x: {
+                                        grid: {
+                                            color: 'var(--chart-grid-color)'
+                                        },
+                                        ticks: {
+                                            color: 'var(--chart-text-color)'
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        labels: {
+                                            color: 'var(--chart-text-color)'
+                                        }
+                                    }
+                                }
+                            }
+                        });
                         
                         // Add heatmap creation
                         createHeatmap(data);
@@ -469,18 +608,59 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         }
 
                         let totalTime = 0;
-                        const tableRows = entries.map(entry => {
+                        const searchData = entries.reduce((acc, entry) => {
                             totalTime += entry.timeSpent;
-                            return \`<tr><td>\${entry.date}</td><td>\${entry.project}</td><td>\${formatTime(entry.timeSpent)}</td></tr>\`;
-                        }).join('');
+                            if (!acc[entry.project]) {
+                                acc[entry.project] = 0;
+                            }
+                            acc[entry.project] += entry.timeSpent;
+                            return acc;
+                        }, {});
 
                         content.innerHTML = \`
-                            <h2>Search Results: (Coding Time is \${formatTime(totalTime)})</h2>
-                            <table>
-                                <tr><th>Date</th><th>Project</th><th>Coding Time</th></tr>
-                                \${tableRows}
-                            </table>
+                            <div class="chart-container search-results-chart">
+                                <div class="chart-title">Search Results (Total Time: \${formatTime(totalTime)})</div>
+                                <div class="chart-wrapper">
+                                    <canvas id="searchChart"></canvas>
+                                </div>
+                            </div>
                         \`;
+
+                        // Create search results chart
+                        const searchCtx = document.getElementById('searchChart').getContext('2d');
+                        const searchChartData = Object.entries(searchData)
+                            .sort((a, b) => b[1] - a[1]);
+                        
+                        new Chart(searchCtx, {
+                            type: 'pie',
+                            data: {
+                                labels: searchChartData.map(([project]) => project),
+                                datasets: [{
+                                    data: searchChartData.map(([_, time]) => time / 60),
+                                    backgroundColor: [
+                                        'rgba(74, 114, 176, 0.7)',
+                                        'rgba(56, 97, 165, 0.7)',
+                                        'rgba(37, 75, 145, 0.7)',
+                                        'rgba(26, 59, 124, 0.7)',
+                                        'rgba(15, 43, 103, 0.7)'
+                                    ],
+                                    borderColor: 'var(--vscode-editor-background)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'right',
+                                        labels: {
+                                            color: 'var(--chart-text-color)'
+                                        }
+                                    }
+                                }
+                            }
+                        });
                     }
 
                     function formatTime(minutes) {
