@@ -1,17 +1,16 @@
-name: Publish Extension to Visual Studio Marketplace
+name: Build Extension Package
 
 on:
   push:
     branches:
-      - main
+      - extension_test
     paths-ignore:
       - '.github/workflows/**'  # Ignore changes to workflow files
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
-    environment: VSC EXT  # Specify the environment where the secret is stored
     
     steps:
       - name: Checkout code
@@ -41,15 +40,10 @@ jobs:
           echo "Package created: $VSIX_PATH"
           echo "vsix_path=$VSIX_PATH" >> $GITHUB_OUTPUT
           echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
+
       - name: Upload VSIX as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extension-release-v${{ steps.package.outputs.version }}-${{ steps.package.outputs.date }}
+          name: extension-test-${{ steps.package.outputs.date }}
           path: "*.vsix"
-          retention-days: 400  # Maximum retention period allowed by GitHub
-          
-      - name: Publish to Visual Studio Marketplace
-        run: vsce publish -p "${{ secrets.VSC_PAT }}" 
+          retention-days: 7  
