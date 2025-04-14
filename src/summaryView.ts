@@ -837,10 +837,23 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             const dayOfWeek = currentDate.getDay();
                             const dayNames = [ 'Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
                             
+                            // Create detailed tooltip content
+                            const hours = Math.floor(minutes / 60);
+                            const mins = Math.round(minutes % 60);
+                            let intensity = 'No activity';
+                            if (level === 1) intensity = 'Light coding';
+                            if (level === 2) intensity = 'Moderate coding';
+                            if (level === 3) intensity = 'Active coding';
+                            if (level === 4) intensity = 'Very active coding';
+                            
+                            const tooltipContent = \`📅 \${dateStr} (\${dayNames[dayOfWeek]})
+⏰ Time spent: \${hours}h \${mins}m
+📊 Activity level: \${intensity}\`;
+                            
                             // Set the data-level on the previous cell if it exists
                             if (previousCell) {
                                 previousCell.setAttribute('data-level', level.toString());
-                                previousCell.title = \`\${dateStr} (\${dayNames[dayOfWeek]}): \${formatTime(minutes)}\`;
+                                previousCell.title = tooltipContent;
                             }
                             
                             grid.appendChild(cell);
@@ -855,8 +868,20 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             const lastLevel = getIntensityLevel(lastMinutes);
                             const lastDayName = ['Saturday','Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][lastDate.getDay()];
                             
+                            const lastHours = Math.floor(lastMinutes / 60);
+                            const lastMins = Math.round(lastMinutes % 60);
+                            let lastIntensity = 'No activity';
+                            if (lastLevel === 1) lastIntensity = 'Light coding';
+                            if (lastLevel === 2) lastIntensity = 'Moderate coding';
+                            if (lastLevel === 3) lastIntensity = 'Active coding';
+                            if (lastLevel === 4) lastIntensity = 'Very active coding';
+                            
+                            const lastTooltipContent = \`📅 \${lastDateStr} (\${lastDayName})
+⏰ Time spent: \${lastHours}h \${lastMins}m
+📊 Activity level: \${lastIntensity}\`;
+                            
                             previousCell.setAttribute('data-level', lastLevel.toString());
-                            previousCell.title = \`\${lastDateStr} (\${lastDayName}): \${formatTime(lastMinutes)}\`;
+                            previousCell.title = lastTooltipContent;
                         }
                         
                         monthGrid.appendChild(grid);
