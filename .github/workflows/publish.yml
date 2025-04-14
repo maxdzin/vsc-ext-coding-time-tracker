@@ -40,11 +40,14 @@ jobs:
           VSIX_PATH=$(ls *.vsix)
           echo "Package created: $VSIX_PATH"
           echo "vsix_path=$VSIX_PATH" >> $GITHUB_OUTPUT
+          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           
       - name: Upload VSIX as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extension-release
+          name: extension-release-v${{ steps.package.outputs.version }}-${{ steps.package.outputs.date }}
           path: "*.vsix"
           retention-days: 400  # Maximum retention period allowed by GitHub
           
