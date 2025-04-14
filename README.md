@@ -128,7 +128,7 @@ The extension provides the following commands through the Command Palette:
 
 ## Changelog
 
-### [0.2.4] - 2025-04-13
+### [0.3.0] - 2025-04-14
 - Added smart activity detection with configurable inactivity timeout
 - Enhanced chart interactivity and responsiveness
 - Improved theme compatibility for all visualizations
