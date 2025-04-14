@@ -182,7 +182,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     th {
                         font-weight: bold;
                         background-color: var(--header-background);
-                        color: var(--header-foreground);
+                        color: var (--header-foreground);
                     }
                     .container {
                         padding: 0px;
@@ -618,8 +618,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             data: {
                                 labels: projectData.map(([project]) => project),
                                 datasets: [{
-                                    label: 'Coding Time (hours)',
-                                    data: projectData.map(([_, time]) => time / 3600),
+                                    label: 'Coding Time',
+                                    data: projectData.map(([_, time]) => time/60),
                                     backgroundColor: chartColors.chartBlues,
                                     borderColor: chartColors.grid,
                                     borderWidth: 1
@@ -634,8 +634,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                         ...commonChartConfig.plugins.tooltip,
                                         callbacks: {
                                             label: function(context) {
-                                                const hours = context.raw;
-                                                return \`\${Math.floor(hours)}h \${Math.round((hours % 1) * 60)}m\`;
+                                                const hours = Math.floor(context.raw);
+                                                const mins = Math.round((context.raw % 1) * 60);
+                                                return \`\${context.label}: \${hours} hour\${hours !== 1 ? 's' : ''} and \${mins} minute\${mins !== 1 ? 's' : ''}\`;
                                             }
                                         }
                                     }
@@ -657,8 +658,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                                 }),
                                 datasets: [{
-                                    label: 'Coding Time (hours)',
-                                    data: dailyData.map(([_, time]) => time / 3600),
+                                    label: 'Coding Time',
+                                    data: dailyData.map(([_, time]) => time / 60),
                                     fill: true,
                                     backgroundColor: \`\${chartColors.accent}33\`,
                                     borderColor: chartColors.accent,
@@ -683,13 +684,19 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                                 return \`\${value}h\`;
                                             }
                                         }
-                                    },
-                                    x: {
-                                        ...commonChartConfig.scales.x,
-                                        ticks: {
-                                            ...commonChartConfig.scales.x.ticks,
-                                            maxRotation: 45,
-                                            minRotation: 45
+                                    }
+                                },
+                                plugins: {
+                                    ...commonChartConfig.plugins,
+                                    tooltip: {
+                                        ...commonChartConfig.plugins.tooltip,
+                                        callbacks: {
+                                            label: function(context) {
+                                                const hours = Math.floor(context.raw);
+                                                const mins = Math.round((context.raw % 1) * 60);
+                                                const date = new Date(context.label);
+                                                return \`\${date.toLocaleDateString('en-US', { weekday: 'long' })}: \${hours} hour\${hours !== 1 ? 's' : ''} and \${mins} minute\${mins !== 1 ? 's' : ''}\`;
+                                            }
                                         }
                                     }
                                 }
@@ -733,7 +740,11 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             data: {
                                 labels: searchChartData.map(([project]) => project),
                                 datasets: [{
-                                    data: searchChartData.map(([_, time]) => time / 60),
+                                    data: searchChartData.map(([_, minutes]) => ({
+                                        value: minutes,
+                                        hours: Math.floor(minutes / 60),
+                                        mins: Math.round(minutes % 60)
+                                    })),
                                     backgroundColor: [
                                         'rgba(255, 99, 132, 0.7)',    // Red
                                         'rgba(54, 162, 235, 0.7)',   // Blue
@@ -775,10 +786,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                         padding: 12,
                                         callbacks: {
                                             label: function(context) {
-                                                const minutes = context.raw;
-                                                const hours = Math.floor(minutes / 60);
-                                                const mins = Math.round(minutes % 60);
-                                                return \`\${context.label}: \${hours}h \${mins}m\`;
+                                                const data = context.raw;
+                                                return \`\${context.label}: \${data.hours} hour\${data.hours !== 1 ? 's' : ''} and \${data.mins} minute\${data.mins !== 1 ? 's' : ''}\`;
                                             }
                                         }
                                     }
