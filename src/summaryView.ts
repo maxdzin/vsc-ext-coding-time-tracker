@@ -597,9 +597,15 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 </div>
                             </div>
                             <div class="chart-container">
-                                <div class="chart-title">Daily Summary (Last 7 Days)</div>
+                                <div class="chart-title">Daily Summary (Last 30 Days)</div>
                                 <div class="chart-wrapper">
                                     <canvas id="dailyChart"></canvas>
+                                </div>
+                                <div class="chart-container search-results-chart">
+                                    <div class="chart-title">Project Distribution</div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="searchChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         \`;
@@ -644,11 +650,11 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             }
                         });
 
-                        // Daily summary chart
+                        // Daily summary chart - showing last 30 days
                         const dailyCtx = document.getElementById('dailyChart').getContext('2d');
                         const dailyData = Object.entries(data.dailySummary)
                             .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
-                            .slice(-7);
+                            .slice(-30);  // Show last 30 days instead of 7
                         
                         new Chart(dailyCtx, {
                             type: 'line',
@@ -702,45 +708,18 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 }
                             }
                         });
-                    }
 
-                    function displaySearchResult(entries) {
-                        const content = document.getElementById('content');
-                        if (entries.length === 0) {
-                            content.innerHTML = '<p>No results found.</p>';
-                            return;
-                        }
-
-                        let totalTime = 0;
-                        const searchData = entries.reduce((acc, entry) => {
-                            totalTime += entry.timeSpent;
-                            if (!acc[entry.project]) {
-                                acc[entry.project] = 0;
-                            }
-                            acc[entry.project] += entry.timeSpent;
-                            return acc;
-                        }, {});
-
-                        content.innerHTML = \`
-                            <div class="chart-container search-results-chart">
-                                <div class="chart-title">Search Results (Total Time: \${formatTime(totalTime)})</div>
-                                <div class="chart-wrapper">
-                                    <canvas id="searchChart"></canvas>
-                                </div>
-                            </div>
-                        \`;
-
-                        // Create search results chart
+                        // Initialize the search chart with all data
                         const searchCtx = document.getElementById('searchChart').getContext('2d');
-                        const searchChartData = Object.entries(searchData)
+                        const allProjectData = Object.entries(data.projectSummary)
                             .sort((a, b) => b[1] - a[1]);
                         
                         new Chart(searchCtx, {
                             type: 'pie',
                             data: {
-                                labels: searchChartData.map(([project]) => project),
+                                labels: allProjectData.map(([project]) => project),
                                 datasets: [{
-                                    data: searchChartData.map(([_, minutes]) => ({
+                                    data: allProjectData.map(([_, minutes]) => ({
                                         value: minutes,
                                         hours: Math.floor(minutes / 60),
                                         mins: Math.round(minutes % 60)
@@ -756,6 +735,218 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                         'rgba(83, 102, 255, 0.7)',   // Indigo
                                         'rgba(40, 167, 69, 0.7)',    // Green
                                         'rgba(220, 53, 69, 0.7)'     // Dark Red
+                                    ],
+                                    borderColor: chartColors.background,
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'right',
+                                        labels: {
+                                            color: chartColors.text,
+                                            font: {
+                                                size: 12,
+                                                weight: '500'
+                                            },
+                                            padding: 20,
+                                            usePointStyle: true
+                                        }
+                                    },
+                                    tooltip: {
+                                        backgroundColor: isDarkTheme ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                                        titleColor: chartColors.text,
+                                        bodyColor: chartColors.text,
+                                        borderColor: chartColors.grid,
+                                        borderWidth: 1,
+                                        padding: 12,
+                                        callbacks: {
+                                            label: function(context) {
+                                                const data = context.raw;
+                                                return \`\${context.label}: \${data.hours} hour\${data.hours !== 1 ? 's' : ''} and \${data.mins} minute\${data.mins !== 1 ? 's' : ''}\`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    function displaySearchResult(entries) {
+                        const content = document.getElementById('content');
+                        if (entries.length === 0) {
+                            content.innerHTML = '<p>No results found.</p>';
+                            return;
+                        }
+                    
+                        // Calculate data for all charts
+                        let totalTime = 0;
+                        const projectData = {};
+                        const dailyData = {};
+                    
+                        // Process entries for both project and daily summaries
+                        entries.forEach(entry => {
+                            totalTime += entry.timeSpent;
+                            
+                            // Update project data
+                            if (!projectData[entry.project]) {
+                                projectData[entry.project] = 0;
+                            }
+                            projectData[entry.project] += entry.timeSpent;
+                    
+                            // Update daily data
+                            if (!dailyData[entry.date]) {
+                                dailyData[entry.date] = 0;
+                            }
+                            dailyData[entry.date] += entry.timeSpent;
+                        });
+                    
+                        // Update the content with all three charts
+                        content.innerHTML = \`
+                            <div class="chart-container">
+                                <div class="chart-title">Project Summary (Filtered)</div>
+                                <div class="chart-wrapper">
+                                    <canvas id="projectChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <div class="chart-title">Daily Summary (Filtered)</div>
+                                <div class="chart-wrapper">
+                                    <canvas id="dailyChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <div class="chart-title">Project Distribution (Total Time: \${formatTime(totalTime)})</div>
+                                <div class="chart-wrapper">
+                                    <canvas id="searchChart"></canvas>
+                                </div>
+                            </div>
+                        \`;
+                    
+                        // Create Project Summary Bar Chart
+                        const projectCtx = document.getElementById('projectChart').getContext('2d');
+                        const projectChartData = Object.entries(projectData)
+                            .sort((a, b) => b[1] - a[1])
+                            .slice(0, 5);
+                    
+                        new Chart(projectCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: projectChartData.map(([project]) => project),
+                                datasets: [{
+                                    label: 'Coding Time',
+                                    data: projectChartData.map(([_, time]) => time/60),
+                                    backgroundColor: chartColors.chartBlues,
+                                    borderColor: chartColors.grid,
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                ...commonChartConfig,
+                                indexAxis: 'y',
+                                plugins: {
+                                    ...commonChartConfig.plugins,
+                                    tooltip: {
+                                        ...commonChartConfig.plugins.tooltip,
+                                        callbacks: {
+                                            label: function(context) {
+                                                const hours = Math.floor(context.raw);
+                                                const mins = Math.round((context.raw % 1) * 60);
+                                                return \`\${context.label}: \${hours} hour\${hours !== 1 ? 's' : ''} and \${mins} minute\${mins !== 1 ? 's' : ''}\`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    
+                        // Create Daily Summary Line Chart
+                        const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+                        const dailyChartData = Object.entries(dailyData)
+                            .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime());
+                    
+                        new Chart(dailyCtx, {
+                            type: 'line',
+                            data: {
+                                labels: dailyChartData.map(([date]) => {
+                                    const d = new Date(date);
+                                    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                                }),
+                                datasets: [{
+                                    label: 'Coding Time',
+                                    data: dailyChartData.map(([_, time]) => time / 60),
+                                    fill: true,
+                                    backgroundColor: \`\${chartColors.accent}33\`,
+                                    borderColor: chartColors.accent,
+                                    borderWidth: 2,
+                                    tension: 0.4,
+                                    pointBackgroundColor: chartColors.accent,
+                                    pointBorderColor: chartColors.background,
+                                    pointBorderWidth: 2,
+                                    pointRadius: 4,
+                                    pointHoverRadius: 6
+                                }]
+                            },
+                            options: {
+                                ...commonChartConfig,
+                                scales: {
+                                    ...commonChartConfig.scales,
+                                    y: {
+                                        ...commonChartConfig.scales.y,
+                                        ticks: {
+                                            ...commonChartConfig.scales.y.ticks,
+                                            callback: function(value) {
+                                                return \`\${value}h\`;
+                                            }
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    ...commonChartConfig.plugins,
+                                    tooltip: {
+                                        ...commonChartConfig.plugins.tooltip,
+                                        callbacks: {
+                                            label: function(context) {
+                                                const hours = Math.floor(context.raw);
+                                                const mins = Math.round((context.raw % 1) * 60);
+                                                const date = new Date(context.label);
+                                                return \`\${date.toLocaleDateString('en-US', { weekday: 'long' })}: \${hours} hour\${hours !== 1 ? 's' : ''} and \${mins} minute\${mins !== 1 ? 's' : ''}\`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    
+                        // Create Project Distribution Pie Chart
+                        const searchCtx = document.getElementById('searchChart').getContext('2d');
+                        const searchChartData = Object.entries(projectData)
+                            .sort((a, b) => b[1] - a[1]);
+                    
+                        new Chart(searchCtx, {
+                            type: 'pie',
+                            data: {
+                                labels: searchChartData.map(([project]) => project),
+                                datasets: [{
+                                    data: searchChartData.map(([_, minutes]) => ({
+                                        value: minutes,
+                                        hours: Math.floor(minutes / 60),
+                                        mins: Math.round(minutes % 60)
+                                    })),
+                                    backgroundColor: [
+                                        'rgba(255, 99, 132, 0.7)',    // Red
+                                        'rgba(54, 162, 235, 0.7)',    // Blue
+                                        'rgba(255, 206, 86, 0.7)',    // Yellow
+                                        'rgba(75, 192, 192, 0.7)',    // Teal
+                                        'rgba(153, 102, 255, 0.7)',   // Purple
+                                        'rgba(255, 159, 64, 0.7)',    // Orange
+                                        'rgba(199, 199, 199, 0.7)',   // Gray
+                                        'rgba(83, 102, 255, 0.7)',    // Indigo
+                                        'rgba(40, 167, 69, 0.7)',     // Green
+                                        'rgba(220, 53, 69, 0.7)'      // Dark Red
                                     ],
                                     borderColor: chartColors.background,
                                     borderWidth: 1
