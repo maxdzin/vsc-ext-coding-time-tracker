@@ -1,12 +1,16 @@
-name: Build Extension Package for Testing
+name: Build Extension Package
 
 on:
   push:
     branches:
       - extension_test
+    paths-ignore:
+      - '.github/workflows/**'  # Ignore changes to workflow files
   pull_request:
     branches:
       - extension_test
+    paths-ignore:
+      - '.github/workflows/**'  # Ignore changes to workflow files
   workflow_dispatch:  # Allow manual trigger
 
 jobs:

@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '.github/workflows/**'  # Ignore changes to workflow files
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
