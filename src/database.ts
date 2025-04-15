@@ -17,6 +17,12 @@ export class Database {
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
+        // Log the storage URI path
+        const storagePath = this.context.storageUri?.fsPath;
+        if (storagePath) {
+            console.log('Extension Data Storage Path:', storagePath);
+            //vscode.window.showInformationMessage(`Data is stored at: ${storagePath}`);
+        }
     }
 
     async addEntry(date: Date, project: string, timeSpent: number) {
