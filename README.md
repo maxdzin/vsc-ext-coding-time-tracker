@@ -26,48 +26,6 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
   - Save Interval: Customize how often your coding time data is saved (default: 5 seconds)
   - Inactivity Timeout: Set how long to wait before stopping the timer when no activity is detected (default: 5 minutes)
 
-## Screenshots
-### Coding time summary
-The summary page provides a detailed report of your coding activity with interactive charts and visualizations:
-- Project distribution chart showing time allocation across projects
-- Daily activity timeline with interactive tooltips
-- 3-month activity heatmap for long-term pattern analysis
-- Theme-aware visualizations that adapt to your VS Code theme
-- Advanced search and filtering capabilities
-
-![Coding Summary ](./images/coding_summary.png)
-
-#### Dark theme
-![Coding Summary Dark Theme](./images/summry_blck.png)
-
-#### Filtering options
-![Filter](./images/filter_summry.png)
-
-#### Status Bar
-Status bar resets to zero at midnight each day and hence shows the coding time for the current day.
-![Status Bar](./images/statusbar.png)
-
-#### Tooltip
-Tooltip shows the total coding time weekly, monthly and all time basis.
-![Tooltip](./images/tooltip.png)
-
-#### Automatic Pause/Resume
-When the user is inactive for a period of time, the timer automatically pauses and resumes when the user starts typing again coding again.
-![Pause/Resume icon](./images/paused_time.png)
-
-It is configurable from the settings. Default value is 5 minutes.
-![Settings](./images/settings.png)
-
-
-### All Command Palette Commands
-There are total 3 commands in the command palette available for this extension.
-
-1. SCTT: Show Coding Time Summary
-2. SCTT: Reset Coding Timer for Today
-3. SCTT: Reset All Coding Timers
-
-![All Command Palette Commands](./images/commands.png)
-
 ## Installation
 
 1. Open Visual Studio Code
@@ -78,16 +36,6 @@ There are total 3 commands in the command palette available for this extension.
 ## Usage
 
 Once installed, the extension will automatically start tracking your coding time. You can view your current session time in the status bar at the bottom of the VSCode window.
-
-## Feature Details
-
-1. Open the Command Palette (Ctrl+Shift+P or Cmd+Shift+P on macOS)
-2. Search for "SCTT: Show Coding Time Summary"
-3. Explore your coding statistics through interactive visualizations:
-   - View project distribution in the Project Summary chart
-   - Track daily patterns in the Activity Timeline
-   - Analyze long-term trends in the Activity Heatmap
-   - All charts automatically adapt to your VS Code theme
 
 ### Using Search & Filters
 
@@ -126,6 +74,52 @@ The extension provides the following commands through the Command Palette:
 - **Reset All Timers** (`SCTT: Reset All Coding Timers`): 
   Resets all coding time trackers with a confirmation prompt to prevent unintended resets.
 
+## Screenshots
+
+### Coding time summary
+The summary page provides a detailed report of your coding activity with interactive charts and visualizations:
+- Project distribution chart showing time allocation across projects
+- Daily activity timeline with interactive tooltips
+- 3-month activity heatmap for long-term pattern analysis
+- Theme-aware visualizations that adapt to your VS Code theme
+- Advanced search and filtering capabilities
+
+![Coding Summary](./images/coding_summary.png)
+
+#### Dark theme
+![Coding Summary Dark Theme](./images/summry_blck.png)
+
+#### Filtering options
+![Filter](./images/filter_summry.png)
+
+#### Status Bar
+Status bar resets to zero at midnight each day and hence shows the coding time for the current day.
+![Status Bar](./images/statusbar.png)
+
+#### Tooltip
+Tooltip shows the total coding time weekly, monthly and all time basis.
+![Tooltip](./images/tooltip.png)
+
+#### Automatic Pause/Resume
+When the user is inactive for a period of time, the timer automatically pauses and resumes when the user starts typing again coding again.
+![Pause/Resume icon](./images/paused_time.png)
+
+It is configurable from the settings. Default value is 5 minutes.
+![Settings](./images/settings.png)
+
+### All Command Palette Commands
+There are total 3 commands in the command palette available for this extension.
+
+1. SCTT: Show Coding Time Summary
+2. SCTT: Reset Coding Timer for Today
+3. SCTT: Reset All Coding Timers
+
+![All Command Palette Commands](./images/commands.png)
+
+## Technical Documentation
+
+For technical details about development, release process, and internal architecture, please see [TECHNICAL.md](TECHNICAL.md).
+
 ## Changelog
 
 ### [0.3.0] - 2025-04-14
@@ -157,9 +151,7 @@ The extension provides the following commands through the Command Palette:
 - Detailed summary view
 - Data persistence
 
-## Feedback and Contributions
-
-We welcome feedback and contributions! If you encounter any issues or have suggestions for improvements, please open an issue on our GitHub repository.
+## Contributing
 
 For developers interested in contributing to the project, please check out our [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines and instructions.
 
