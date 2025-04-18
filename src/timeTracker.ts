@@ -149,7 +149,51 @@ export class TimeTracker implements vscode.Disposable {
 
     private getCurrentProject(): string {
         const workspaceFolders = vscode.workspace.workspaceFolders;
-        return workspaceFolders ? workspaceFolders[0].name : 'Unknown Project';
+        if (!workspaceFolders) {
+            return 'Unknown Project';
+        }
+
+        // Get the active text editor
+        const activeEditor = vscode.window.activeTextEditor;
+        if (!activeEditor) {
+            return 'No Active File';
+        }
+
+        // Get workspace information
+        const workspaceName = vscode.workspace.name || 'Default Workspace';
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
+
+        if (!workspaceFolder) {
+            // File is outside any workspace folder
+            return `External/${this.getExternalProjectName(activeEditor.document.uri)}`;
+        }
+
+        // If we're in a multi-root workspace, prefix with workspace name
+        if (workspaceFolders.length > 1) {
+            return `${workspaceName}/${workspaceFolder.name}`;
+        }
+
+        return workspaceFolder.name;
+    }
+
+    private getExternalProjectName(uri: vscode.Uri): string {
+        // Handle different scenarios for external files
+        if (uri.scheme !== 'file') {
+            return 'Virtual Files';
+        }
+
+        // Get the parent folder name for external files
+        const path = uri.fsPath;
+        const parentFolder = path.split(/[\\/]/);
+        
+        // Remove empty segments and file name
+        const folders = parentFolder.filter(Boolean);
+        if (folders.length >= 2) {
+            // Return "ParentFolder/CurrentFolder"
+            return `${folders[folders.length - 2]}/${folders[folders.length - 1]}`;
+        }
+        
+        return 'Other';
     }
 
     getTodayTotal(): number {

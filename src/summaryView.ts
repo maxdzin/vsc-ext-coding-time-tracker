@@ -537,7 +537,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             }
                         }
                     };
-
+                    
                     window.addEventListener('message', event => {
                         const message = event.data;
                         if (message.command === 'update') {
@@ -781,7 +781,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             content.innerHTML = '<p>No results found.</p>';
                             return;
                         }
-                    
+
                         // Calculate data for all charts
                         let totalTime = 0;
                         const projectData = {};
