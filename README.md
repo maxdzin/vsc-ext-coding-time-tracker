@@ -122,6 +122,12 @@ For technical details about development, release process, and internal architect
 
 ## Changelog
 
+### [0.3.4] - 2025-04-19
+ - Handle multi-root workspaces, external files, and virtual files more effectively. 
+ - Added a verify-changes job to check if a version update is required and ensure non-documentation files are modified before publishing. This prevents unnecessary releases.
+ - Introduced a new workflow to automate the creation of beta and production releases, including attaching .vsix files and setting appropriate release metadata.
+ - Added a new technical documentation file outlining the development setup, release process, internal architecture, and testing guidelines for the extension.
+
 ### [0.3.0] - 2025-04-14
 - Added smart activity detection with configurable inactivity timeout
 - Enhanced chart interactivity and responsiveness
