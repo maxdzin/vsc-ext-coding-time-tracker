@@ -25,8 +25,14 @@ export class Database {
         }
     }
 
+    private getLocalDateString(date: Date): string {
+        return new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
+            .toISOString()
+            .split('T')[0];
+    }
+
     async addEntry(date: Date, project: string, timeSpent: number) {
-        const dateString = date.toISOString().split('T')[0];
+        const dateString = this.getLocalDateString(date);
         const entries = this.getEntries();
         const existingEntryIndex = entries.findIndex(entry => entry.date === dateString && entry.project === project);
 
@@ -74,7 +80,7 @@ export class Database {
     }
 
     async resetTodayTime(): Promise<void> {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getLocalDateString(new Date());
         const entries = this.getEntries();
         const updatedEntries = entries.filter(entry => entry.date !== today);
         await this.context.globalState.update('timeEntries', updatedEntries);
