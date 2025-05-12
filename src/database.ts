@@ -14,6 +14,7 @@ export interface SummaryData {
 
 export class Database {
     private context: vscode.ExtensionContext;
+    private entries: TimeEntry[] | null = null;
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
@@ -21,39 +22,24 @@ export class Database {
         if (!this.context.globalState.get('timeEntries')) {
             this.context.globalState.update('timeEntries', []);
         }
-        
-        // Debug logging
-        const entries = this.getEntries();
-        console.log('Database initialized with entries:', entries);
-        
-        // Log the storage URI path
-        const storagePath = this.context.storageUri?.fsPath;
-        if (storagePath) {
-            console.log('Extension Data Storage Path:', storagePath);
-            //vscode.window.showInformationMessage(`Data is stored at: ${storagePath}`);
-        }
+        // Load entries into memory
+        this.entries = this.context.globalState.get<TimeEntry[]>('timeEntries', []);
     }
 
     async addEntry(date: Date, project: string, timeSpent: number) {
         const dateString = date.toISOString().split('T')[0];
         const entries = this.getEntries();
         
-        console.log('Adding entry:', { date: dateString, project, timeSpent });
-        console.log('Current entries:', entries);
-
         const existingEntryIndex = entries.findIndex(entry => entry.date === dateString && entry.project === project);
 
         if (existingEntryIndex !== -1) {
             entries[existingEntryIndex].timeSpent += timeSpent;
-            console.log('Updated existing entry:', entries[existingEntryIndex]);
         } else {
             entries.push({ date: dateString, project, timeSpent });
-            console.log('Added new entry');
         }
 
         try {
-            await this.context.globalState.update('timeEntries', entries);
-            console.log('Successfully saved entries:', this.getEntries());
+            await this.updateEntries(entries);
         } catch (error) {
             console.error('Error saving entry:', error);
             vscode.window.showErrorMessage('Failed to save time entry');
@@ -61,7 +47,15 @@ export class Database {
     }
 
     getEntries(): TimeEntry[] {
-        return this.context.globalState.get<TimeEntry[]>('timeEntries', []);
+        if (!this.entries) {
+            this.entries = this.context.globalState.get<TimeEntry[]>('timeEntries', []);
+        }
+        return this.entries;
+    }
+
+    private async updateEntries(entries: TimeEntry[]): Promise<void> {
+        this.entries = entries;
+        await this.context.globalState.update('timeEntries', entries);
     }
 
     async getSummaryData(): Promise<SummaryData> {
@@ -96,10 +90,10 @@ export class Database {
         const today = new Date().toISOString().split('T')[0];
         const entries = this.getEntries();
         const updatedEntries = entries.filter(entry => entry.date !== today);
-        await this.context.globalState.update('timeEntries', updatedEntries);
+        await this.updateEntries(updatedEntries);
     }
 
     async resetAllTime(): Promise<void> {
-        await this.context.globalState.update('timeEntries', []);
+        await this.updateEntries([]);
     }
 }
