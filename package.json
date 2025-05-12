@@ -19,16 +19,19 @@
   "contributes": {
     "configuration": {
       "title": "Simple Coding Time Tracker",
-      "properties": {
-        "simpleCodingTimeTracker.saveInterval": {
+      "properties": {        "simpleCodingTimeTracker.saveInterval": {
           "type": "number",
           "default": 5,
-          "description": "Interval in seconds to save the current coding session"
-        },
-        "simpleCodingTimeTracker.inactivityTimeout": {
+          "description": "How often to save coding time data (in seconds)"
+        },        "simpleCodingTimeTracker.inactivityTimeout": {
           "type": "number",
-          "default": 300,
-          "description": "Time in seconds of inactivity before tracking stops (default: 300 seconds = 5 minutes)"
+          "default": 150,
+          "description": "Stop tracking after no keyboard/mouse activity (in seconds)"
+        },
+        "simpleCodingTimeTracker.focusTimeout": {
+          "type": "number",
+          "default": 180,
+          "description": "Continue tracking when switching apps (in seconds)"
         }
       }
     },

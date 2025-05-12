@@ -25,6 +25,7 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
 - **Configurable Settings**: 
   - Save Interval: Customize how often your coding time data is saved (default: 5 seconds)
   - Inactivity Timeout: Set how long to wait before stopping the timer when no activity is detected (default: 5 minutes)
+   - Focus Timeout: Set how long to continue tracking after VS Code loses focus (default: 60 seconds)
 
 ## Installation
 

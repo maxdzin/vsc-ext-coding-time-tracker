@@ -17,6 +17,15 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    // Register configuration change listener
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('simpleCodingTimeTracker')) {
+                timeTracker.updateConfiguration();
+            }
+        })
+    );
+
     // Register the existing command
     let disposable = vscode.commands.registerCommand('simpleCodingTimeTracker.showSummary', () => {
         summaryView.show();
