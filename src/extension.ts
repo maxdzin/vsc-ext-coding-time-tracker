@@ -7,8 +7,8 @@ import { SummaryViewProvider } from './summaryView';
 export function activate(context: vscode.ExtensionContext) {
     const database = new Database(context);
     const timeTracker = new TimeTracker(database);
-    const statusBar = new StatusBar(timeTracker);
     const summaryView = new SummaryViewProvider(context, database, timeTracker);
+    const statusBar = new StatusBar(timeTracker, summaryView);
 
     // Register cursor tracking
     context.subscriptions.push(
@@ -24,55 +24,82 @@ export function activate(context: vscode.ExtensionContext) {
                 timeTracker.updateConfiguration();
             }
         })
-    );    // Register the show summary command
+    );
+
+    // Register the show summary command
     let disposable = vscode.commands.registerCommand('simpleCodingTimeTracker.showSummary', () => {
         summaryView.show();
     });
 
+    // Register view storage command
+    let viewStorageDisposable = vscode.commands.registerCommand('simpleCodingTimeTracker.viewStorageData', async () => {
+        try {
+            const entries = await database.getEntries();
+            const processedData = {
+                totalEntries: entries.length,
+                exportDate: new Date().toISOString(),
+                entries: entries.map(entry => ({
+                    ...entry,
+                    timeSpentFormatted: `${Math.round(entry.timeSpent)} minutes`
+                }))
+            };
+            
+            // Create a temporary untitled document
+            const document = await vscode.workspace.openTextDocument({
+                content: JSON.stringify(processedData, null, 2),
+                language: 'json'
+            });
+            
+            await vscode.window.showTextDocument(document, {
+                preview: false,
+                viewColumn: vscode.ViewColumn.One
+            });
+            
+            vscode.window.showInformationMessage('Time tracking data loaded successfully');        } catch (error: any) {
+            vscode.window.showErrorMessage(`Failed to view data: ${error?.message || 'Unknown error'}`);
+        }
+    });
+
+    // Register data management command
+    let clearDataCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.clearAllData', async () => {
+        // Stop tracking before clearing data
+        if (timeTracker.isActive()) {
+            timeTracker.stopTracking('clear all data');
+        }
+        
+        const success = await database.clearAllData();
+        if (success) {
+            // Update the summary view to show empty state
+            await summaryView.show();
+            // Force status bar update
+            statusBar.updateNow();
+        }
+    });
+    context.subscriptions.push(clearDataCommand);
+
     context.subscriptions.push(disposable);
+    context.subscriptions.push(viewStorageDisposable);
     context.subscriptions.push(timeTracker);
     context.subscriptions.push(statusBar);
 
     // Start tracking immediately if VS Code is already focused
     if (vscode.window.state.focused) {
-        timeTracker.startTracking();
+        timeTracker.startTracking('initial startup');
     }
 
-    // Variable to store the focus timeout handle
-    let focusTimeoutHandle: NodeJS.Timeout | null = null;
-
+    // Window state is now handled in TimeTracker class
     vscode.window.onDidChangeWindowState((e: vscode.WindowState) => {
-        if (e.focused) {
-            if (focusTimeoutHandle) {
-                clearTimeout(focusTimeoutHandle);
-                focusTimeoutHandle = null;
-            }
-            timeTracker.startTracking();
-        } else {
-            const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-            const focusTimeoutSeconds = config.get('focusTimeout', 60);
-
-            // Only stop tracking after the focus timeout
-            if (focusTimeoutHandle) {
-                clearTimeout(focusTimeoutHandle);
-            }
-            
-            focusTimeoutHandle = setTimeout(() => {
-                timeTracker.stopTracking();
-            }, focusTimeoutSeconds * 1000);
+        if (e.focused && !timeTracker.isActive()) {
+            timeTracker.startTracking('window focus');
         }
     });
 
     vscode.workspace.onDidOpenTextDocument(() => {
         if (vscode.window.state.focused) {
-            timeTracker.startTracking();
+            timeTracker.startTracking('document opened');
         }
     });
 
-    // Refresh summary view when status bar is clicked
-    statusBar.onDidClick(() => {
-        summaryView.show();
-    });
 }
 
 export function deactivate() {}

@@ -2,7 +2,7 @@
   "name": "simple-coding-time-tracker",
   "displayName": "Simple Coding Time Tracker",
   "description": "Track and visualize your coding time across projects",
-  "version": "0.3.9",
+  "version": "0.4.0",
   "publisher": "noorashuvo",
   "license": "MIT",
   "icon": "icon-sctt.png",
@@ -20,11 +20,6 @@
     "configuration": {
       "title": "Simple Coding Time Tracker",
       "properties": {
-        "simpleCodingTimeTracker.saveInterval": {
-          "type": "number",
-          "default": 5,
-          "description": "How often to save coding time data (in seconds)"
-        },
         "simpleCodingTimeTracker.inactivityTimeout": {
           "type": "number",
           "default": 150,
@@ -36,13 +31,23 @@
           "description": "If you switch away from VS Code, continue counting as coding time for up to this many seconds before pausing."
         }
       }
-    },    "commands": [
+    },
+    "commands": [
       {
         "command": "simpleCodingTimeTracker.showSummary",
         "title": "SCTT: Show Coding Time Summary"
+      },
+      {
+        "command": "simpleCodingTimeTracker.viewStorageData",
+        "title": "SCTT: View Time Tracking Data"
+      },
+      {
+        "command": "simpleCodingTimeTracker.clearAllData",
+        "title": "SCTT: Clear All Time Tracking Data"
       }
     ]
-  },  "scripts": {
+  },
+  "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack",
     "watch": "webpack --watch",
@@ -63,6 +68,9 @@
     "typescript": "^4.2.4",
     "webpack": "^5.99.8",
     "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "simple-git": "^3.27.0"
   },
   "repository": {
     "type": "git",
